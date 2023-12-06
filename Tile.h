@@ -8,7 +8,8 @@
 
 #include <SFML/Graphics/Sprite.hpp>
 #include <SFML/Graphics/Texture.hpp>
-#include "TextureManager.cpp"
+#include <SFML/Graphics/BlendMode.hpp>
+#include "TextureManager.h"
 using namespace std;
 
 class Tile{
@@ -19,6 +20,7 @@ public:
     bool flagged;
     sf::Texture texture;
     sf::Sprite sprite;
+
 
 
     Tile(){
@@ -41,27 +43,37 @@ public:
         sprite.setPosition(x, y);
     }
 
-    bool reveal(bool a){
-        revealed = a;
-        if(mine){
-            sprite.setTexture(TextureManager::getTexture("mine"));
-            return true;
-        } else{
-            sprite.setTexture(TextureManager::getTexture("tile_revealed"));
-            return false;
-        }
-    }
-
     void flag(bool a){
         flagged = a;
         if(flagged){
             sprite.setTexture(TextureManager::getTexture("flag"));
+        } else{
+            sprite.setTexture(TextureManager::getTexture("tile_hidden"));
         }
+    }
+
+    bool reveal(bool a){
+        revealed = a;
+        if(revealed){
+            if(mine){
+                sprite.setTexture(TextureManager::getTexture("mine"));
+                return true;
+            } else{
+                sprite.setTexture(TextureManager::getTexture("tile_revealed"));
+                return false;
+            }
+        } else{
+            sprite.setTexture(TextureManager::getTexture("tile_hidden"));
+            return false;
+        }
+
     }
 
     sf::Sprite getSprite(){
         return sprite;
     }
+
+
 
 };
 

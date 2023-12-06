@@ -9,6 +9,7 @@
 #include <SFML/System/Vector2.hpp>
 #include "Tile.h"
 #include <string>
+#include <cmath>
 #include <vector>
 #include <sstream>
 #include <fstream>
@@ -89,18 +90,115 @@ void createLeader(int &numCols, int &numRows, sf::Font &font){
     }
 }
 
+void updateMinesNext(vector<vector<Tile>> &board){
+    for(int i = 0; i < board.size(); i++){
+        for(int j = 0; j < board[i].size(); j++){
+            int count = 0;
+            if(!board[i][j].mine){
+                if(i-1>=0 && i+1<board.size() && j-1>0 && j+1<board[0].size()){
+                    if(board[i-1][j-1].mine){
+                        count++;
+                    }
+                    if(board[i][j-1].mine){
+                        count++;
+                    }
+                    if(board[i+1][j-1].mine){
+                        count++;
+                    }
+                    if(board[i-1][j].mine){
+                        count++;
+                    }
+                    if(board[i+1][j].mine){
+                        count++;
+                    }
+                    if(board[i-1][j+1].mine){
+                        count++;
+                    }
+                    if(board[i][j+1].mine){
+                        count++;
+                    }
+                    if(board[i+1][j+1].mine) {
+                        count++;
+                    }
+                }
+
+                board[i][j].setMinesNext(count);
+            }
+        }
+    }
+}
+
+void revealAll(vector<vector<Tile>> &board){
+    for(int i = 0; i < board.size(); i++) {
+        for (int j = 0; j < board[i].size(); j++) {
+            bool a = board[i][j].reveal(true);
+        }
+    }
+}
+
+vector<vector<Tile>> recoverBoard(vector<vector<Tile>> &board){
+    return board;
+}
+
+void revealAllMines(vector<vector<Tile>> &board){
+    for(int i = 0; i < board.size(); i++) {
+        for (int j = 0; j < board[i].size(); j++) {
+            if(board[i][j].mine){
+                bool a = board[i][j].reveal(!board[i][j].revealed);
+            }
+        }
+    }
+}
+
+void flagAllMines(vector<vector<Tile>> &board){
+    for(int i = 0; i < board.size(); i++) {
+        for (int j = 0; j < board[i].size(); j++) {
+            if(board[i][j].mine){
+                board[i][j].flag(true);
+            }
+        }
+    }
+}
+
+bool isGameOver(vector<vector<Tile>> &board){
+    for(int i = 0; i < board.size(); i++) {
+        for (int j = 0; j < board[i].size(); j++) {
+            if(!board[i][j].mine){
+                if(board[i][j].revealed == false)
+                    return false;
+            }
+        }
+    }
+    return true;
+}
+
+void revealTiles(vector<vector<Tile>> &board, int i, int j){
+    try{
+        bool a = board[i][j].reveal(true);
+        if(!a && board[i][j].minesNext == 0 && i-1>=0 && i+1<board.size() && j-1>0 && j+1<board[0].size()){
+            revealTiles(board, i+1, j);
+        }
+    }
+    catch(out_of_range){
+        cout << "catch" << endl;
+    }
+}
+
 void createBoard(int &numCols, int &numRows, int &numMines, vector<vector<Tile>> &board){
-    random_device rd;
-    mt19937 gen(rd());
-    std::uniform_int_distribution<int> distribution(0, 1);
+    if(board.size() != 0){
+        board.clear();
+    }
+
+    mt19937 gen(time(NULL));
+    uniform_int_distribution<int> distribution(0, 10);
     int count = 0;
 
-    for(int i = 0; i < numRows; i++){
+    for(int i = 0; i < numCols; i++){
         vector<Tile> bRow;
-        for(int j = 0; j < numCols; j++){
+        for(int j = 0; j < numRows; j++){
             Tile temp;
             int random_number = distribution(gen);
-            if(random_number == 1 && count < numMines){
+            if(random_number == 0 && count < numMines){
                 count++;
                 temp.setMine(true);
             }
@@ -109,10 +207,18 @@ void createBoard(int &numCols, int &numRows, int &numMines, vector<vector<Tile>>
         }
         board.push_back(bRow);
     }
-}
-
-void updateLeader(){
-    //update after game win
+    if(count != numMines){
+        for(int i = 0; i < numCols; i++){
+            for(int j = 0; j < numRows; j++){
+                int random_number = distribution(gen);
+                if(random_number == 0 && count < numMines){
+                    count++;
+                    board[i][j].setMine(true);
+                }
+            }
+        }
+    }
+    updateMinesNext(board);
 }
 
 int main() {
@@ -318,7 +424,9 @@ int main() {
     bool gameOver = false;
     bool gameWon = false;
     bool gamePaused = false;
+    bool saveState = false;
     vector<vector<Tile>> board;
+    vector<vector<Tile>> boardSave;
     createBoard(numCols, numRows, numMines, board);
 
     while (gameWindow.isOpen()) {
@@ -327,39 +435,78 @@ int main() {
         while (gameWindow.pollEvent(gameEvent)) {
             if (gameEvent.type == sf::Event::MouseButtonPressed) {
                 sf::Vector2i mPos = sf::Mouse::getPosition(gameWindow);
-                if (lb.contains(mPos.x, mPos.y)) {
-                    createLeader(numCols, numRows, font);
-                }
-                if (face.contains(mPos.x, mPos.y)) {
-                    cout << "reset" << endl;
-                }
-                if (play_pause.contains(mPos.x, mPos.y)) {
-                    gamePaused = !gamePaused;
-                }
-                if (db.contains(mPos.x, mPos.y)) {
-                    cout << "toggle mine visibility" << endl;
+                if(sf::Mouse::isButtonPressed(sf::Mouse::Left)){
+                    if (lb.contains(mPos.x, mPos.y)) {
+//                        saveState = gamePaused;
+//                        gamePaused = true;
+//                        if(gamePaused != saveState){
+//                            boardSave = recoverBoard(board);
+//                            revealAll(board);
+//                        }
+                        createLeader(numCols, numRows, font);
+                    }
+                    if (face.contains(mPos.x, mPos.y)) {
+                        createBoard(numCols, numRows, numMines, board);
+                        gameOver = false;
+                        gameWon = false;
+                        gamePaused = false;
+                    }
+                    if (play_pause.contains(mPos.x, mPos.y) && !gameOver) {
+                        gamePaused = !gamePaused;
+                        if(gamePaused){
+                            boardSave = recoverBoard(board);
+                            revealAll(board);
+                        } else{
+                            board = recoverBoard(boardSave);
+                        }
+                    }
+                    if (db.contains(mPos.x, mPos.y)) {
+                        revealAllMines(board);
+                    }
+                    if(mPos.y < 32 * (numRows + 0.5) && !gameOver && !gamePaused){
+                        int a = floor(mPos.x/32);
+                        int b = floor(mPos.y/32);
+                        if(!board[a][b].revealed && !board[a][b].flagged){
+                            if(board[a][b].reveal(true)){
+                                gameOver=true;
+                                gameWon=false;
+                            }
+                            if(isGameOver(board)){
+                                gameOver = true;
+                                gameWon = true;
+                            }
+                            revealTiles(board, a, b);
+                        }
+                    }
+                } else if(sf::Mouse::isButtonPressed(sf::Mouse::Right) && !gameOver && !gamePaused){
+                    if(mPos.y < 32 * (numRows + 0.5)){
+                        int a = floor(mPos.x/32);
+                        int b = floor(mPos.y/32);
+                        if(!board[a][b].revealed){
+                            board[a][b].flag(!board[a][b].flagged);
+                        }
+                    }
                 }
             }
             if (gameEvent.type == sf::Event::Closed)
                 gameWindow.close();
         }
         gameWindow.clear(sf::Color::White);
-        for(int i = 0; i < board.size(); i++){
-            for(int j = 0; j < board[0].size(); j++){
+        for(int i = 0; i < numCols; i++){
+            for(int j = 0; j < numRows; j++){
                 gameWindow.draw(board[i][j].getSprite());
             }
         }
-        gameWindow.draw(board[0][0].getSprite());
-        gameWindow.draw(board[1][0].getSprite());
-        gameWindow.draw(board[2][2].getSprite());
         gameWindow.draw(debug);
         gameWindow.draw(leaderboard);
         if (!gameOver) {
             gameWindow.draw(happyFace);
         } else {
             if (gameWon) {
+                flagAllMines(board);
                 gameWindow.draw(winFace);
             } else {
+                revealAllMines(board);
                 gameWindow.draw(loseFace);
             }
         }
