@@ -15,6 +15,7 @@
 #include <fstream>
 #include <iostream>
 #include <random>
+#include <SFML/System/Clock.hpp>
 using namespace std;
 
 void setText(sf::Text &text, float x, float y){
@@ -38,64 +39,63 @@ void setName(sf::Text &userType, string &username, char letter, int &numCols, in
 
 }
 
-void createLeader(int &numCols, int &numRows, sf::Font &font){
-    sf::RenderWindow lbWindow(sf::VideoMode(numCols*16, numRows*16+100), "Minesweeper", sf::Style::Close);
-
-    sf::Text leaderTitle;
-    leaderTitle.setFont(font);
-    leaderTitle.setString("LEADERBOARD");
-    leaderTitle.setCharacterSize(20); // in pixels, not points!
-    leaderTitle.setFillColor(sf::Color::White);
-    leaderTitle.setStyle(sf::Text::Bold | sf::Text::Underlined);
-    setText(leaderTitle, numCols*8, (numRows*16+100)/2-120);
-
-    string leaderText = "";
-    int count = 1;
-    ifstream file("leaderboard.txt");
-    if(file.is_open()){
-        string entry;
-        while(!file.eof()){
-            stringstream ss;
-            ss << count;
-            leaderText += ss.str() + ".\t";
-
-            getline(file, entry);
-            leaderText += entry.substr(0, entry.find(",")) + "\t";
-
-            entry = entry.substr(entry.find(",")+1);
-            leaderText += entry.substr(0, entry.find(",")) + "\n\n";
-            count++;
-        }
-        file.close();
-    }
-
-    sf::Text leaders;
-    leaders.setFont(font);
-    leaders.setString(leaderText);
-    leaders.setCharacterSize(18); // in pixels, not points!
-    leaders.setFillColor(sf::Color::White);
-    leaders.setStyle(sf::Text::Bold);
-    setText(leaders, numCols*8, (numRows*16+100)/2+20);
-
-    while(lbWindow.isOpen()){
-        sf::Event lbEvent;
-        while (lbWindow.pollEvent(lbEvent)){
-            if (lbEvent.type == sf::Event::Closed)
-                lbWindow.close();
-        }
-        lbWindow.clear(sf::Color::Blue);
-        lbWindow.draw(leaderTitle);
-        lbWindow.draw(leaders);
-        lbWindow.display();
-    }
-}
+//void checkIfLeader(int &timeRunning, string &username){
+//    vector<int> leaders;
+//    vector<string> entries;
+//    ifstream file("leaderboard.txt");
+//    if(file.is_open()) {
+//        string entry;
+//        while (!file.eof()) {
+//            int leaderTime;
+//            getline(file, entry);
+//            entries.push_back(entry);
+//            entry = entry.substr(entry.find(","));
+//            leaderTime += stoi(entry.substr(0, entry.find(":"))) * 60;
+//            leaderTime += stoi(entry.substr(entry.find(":"), entry.find(",")));
+//            entry = entry.substr(entry.find(",") + 1);
+//            leaders.push_back(leaderTime);
+//        }
+//        file.close();
+//    }
+//    int position = 6;
+//    for(int i = 0; i < 5; i++){
+//        if(leaders[i] > timeRunning){
+//            position = i;
+//        }
+//    }
+//    if(position < 6){
+//        string entry = "";
+//        int timeMins = timeRunning/60;
+//        int timeSecs = timeRunning%60;
+//        stringstream ss;
+//        ss << timeMins;
+//        entry += ss.str() + ":";
+//        stringstream ss2;
+//        ss2 << timeSecs;
+//        entry += ss2.str() + "," + username.substr(0, username.find("|")) + "*";
+//        entries.push_back(entry);
+////        ofstream file2("leaderboard.txt");
+////        if(file2.is_open()) {
+////            string entry;
+////            for(int i = 0; i < 5; i++){
+////                if(i == position){
+////                    file2 << entries[entries.size()-1] << endl;
+////                } else{
+////                    file2 << entries[i] << endl;
+////                }
+////            }
+////            file2.close();
+////        }
+//
+//    }
+//}
 
 void updateMinesNext(vector<vector<Tile>> &board){
     for(int i = 0; i < board.size(); i++){
         for(int j = 0; j < board[i].size(); j++){
             int count = 0;
             if(!board[i][j].mine){
-                if(i-1>=0 && i+1<board.size() && j-1>0 && j+1<board[0].size()){
+                if(i-1>=0 && i+1<board.size() && j-1>=0 && j+1<board[0].size()){
                     if(board[i-1][j-1].mine){
                         count++;
                     }
@@ -121,7 +121,119 @@ void updateMinesNext(vector<vector<Tile>> &board){
                         count++;
                     }
                 }
+                if(i == 0 && j-1>=0 && j+1<board[0].size()){
+                    if(board[i][j-1].mine){
+                        count++;
+                    }
+                    if(board[i+1][j-1].mine){
+                        count++;
+                    }
+                    if(board[i+1][j].mine){
+                        count++;
+                    }
+                    if(board[i][j+1].mine){
+                        count++;
+                    }
+                    if(board[i+1][j+1].mine) {
+                        count++;
+                    }
+                }
+                if(i == board.size()-1 && j-1>=0 && j+1<board[0].size()){
+                    if(board[i][j-1].mine){
+                        count++;
+                    }
+                    if(board[i-1][j-1].mine){
+                        count++;
+                    }
+                    if(board[i-1][j].mine){
+                        count++;
+                    }
+                    if(board[i][j+1].mine){
+                        count++;
+                    }
+                    if(board[i-1][j+1].mine) {
+                        count++;
+                    }
+                }
+                if(i-1>=0 && i+1<board.size() && j == 0){
+                    if(board[i-1][j].mine){
+                        count++;
+                    }
+                    if(board[i+1][j].mine){
+                        count++;
+                    }
+                    if(board[i-1][j+1].mine){
+                        count++;
+                    }
+                    if(board[i][j+1].mine){
+                        count++;
+                    }
+                    if(board[i+1][j+1].mine) {
+                        count++;
+                    }
+                }
+                if(i-1>=0 && i+1<board.size() && j == board[0].size()-1){
+                    if(board[i-1][j].mine){
+                        count++;
+                    }
+                    if(board[i+1][j].mine){
+                        count++;
+                    }
+                    if(board[i-1][j-1].mine){
+                        count++;
+                    }
+                    if(board[i][j-1].mine){
+                        count++;
+                    }
+                    if(board[i+1][j-1].mine) {
+                        count++;
+                    }
+                }
+                if(i==0 && j == 0){
+                    if(board[i+1][j].mine){
+                        count++;
+                    }
+                    if(board[i][j+1].mine){
+                        count++;
+                    }
+                    if(board[i+1][j+1].mine) {
+                        count++;
+                    }
+                }
+                if(i==0 && j == board[0].size()-1){
+                    if(board[i][j-1].mine){
+                        count++;
+                    }
+                    if(board[i+1][j-1].mine){
+                        count++;
+                    }
+                    if(board[i+1][j].mine){
+                        count++;
+                    }
+                }
+                if(i == board.size()-1 && j == 0){
+                    if(board[i-1][j].mine){
+                        count++;
+                    }
+                    if(board[i-1][j+1].mine){
+                        count++;
+                    }
+                    if(board[i][j+1].mine){
+                        count++;
+                    }
+                }
+                if(i == board.size()-1 && j == board[0].size()){
+                    if(board[i-1][j-1].mine){
+                        count++;
+                    }
+                    if(board[i][j-1].mine){
+                        count++;
+                    }
 
+                    if(board[i-1][j].mine){
+                        count++;
+                    }
+                }
                 board[i][j].setMinesNext(count);
             }
         }
@@ -131,7 +243,7 @@ void updateMinesNext(vector<vector<Tile>> &board){
 void revealAll(vector<vector<Tile>> &board){
     for(int i = 0; i < board.size(); i++) {
         for (int j = 0; j < board[i].size(); j++) {
-            bool a = board[i][j].reveal(true);
+            board[i][j].sprite2.setTexture(TextureManager::getTexture("tile_revealed"));
         }
     }
 }
@@ -150,6 +262,16 @@ void revealAllMines(vector<vector<Tile>> &board){
     }
 }
 
+void setMines(vector<vector<Tile>> &board){
+    for(int i = 0; i < board.size(); i++) {
+        for (int j = 0; j < board[i].size(); j++) {
+            if(board[i][j].mine){
+                bool a = board[i][j].reveal(true);
+            }
+        }
+    }
+}
+
 void flagAllMines(vector<vector<Tile>> &board){
     for(int i = 0; i < board.size(); i++) {
         for (int j = 0; j < board[i].size(); j++) {
@@ -158,6 +280,18 @@ void flagAllMines(vector<vector<Tile>> &board){
             }
         }
     }
+}
+
+int numFlags(vector<vector<Tile>> &board){
+    int count = 0;
+    for(int i = 0; i < board.size(); i++) {
+        for (int j = 0; j < board[i].size(); j++) {
+            if(board[i][j].flagged){
+                count++;
+            }
+        }
+    }
+    return count;
 }
 
 bool isGameOver(vector<vector<Tile>> &board){
@@ -174,9 +308,12 @@ bool isGameOver(vector<vector<Tile>> &board){
 
 void revealTiles(vector<vector<Tile>> &board, int i, int j){
     try{
-        bool a = board[i][j].reveal(true);
-        if(!a && board[i][j].minesNext == 0 && i-1>=0 && i+1<board.size() && j-1>0 && j+1<board[0].size()){
-            revealTiles(board, i+1, j);
+        if(!board[i][j].flagged){
+            bool a = board[i][j].reveal(true);
+            if(!a && board[i][j].minesNext == 0 && i-1>=0 && i+1<board.size() && j-1>0 && j+1<board[0].size()){
+                revealTiles(board, i+1, j);
+                revealTiles(board, i, j-1);
+            }
         }
     }
     catch(out_of_range){
@@ -207,7 +344,7 @@ void createBoard(int &numCols, int &numRows, int &numMines, vector<vector<Tile>>
         }
         board.push_back(bRow);
     }
-    if(count != numMines){
+    while(count < numMines){
         for(int i = 0; i < numCols; i++){
             for(int j = 0; j < numRows; j++){
                 int random_number = distribution(gen);
@@ -218,6 +355,7 @@ void createBoard(int &numCols, int &numRows, int &numMines, vector<vector<Tile>>
             }
         }
     }
+
     updateMinesNext(board);
 }
 
@@ -420,11 +558,18 @@ int main() {
     sf::FloatRect play_pause = pause.getGlobalBounds();
     sf::FloatRect db = debug.getGlobalBounds();
 
+    //clock setup
+    sf::Clock clock;
+    int timeSaved = 0;
+    int timeRunning = 0;
+
     //game control setup
     bool gameOver = false;
     bool gameWon = false;
     bool gamePaused = false;
     bool saveState = false;
+    bool leaderboardBo = false;
+    int timesPaused = 0;
     vector<vector<Tile>> board;
     vector<vector<Tile>> boardSave;
     createBoard(numCols, numRows, numMines, board);
@@ -437,27 +582,34 @@ int main() {
                 sf::Vector2i mPos = sf::Mouse::getPosition(gameWindow);
                 if(sf::Mouse::isButtonPressed(sf::Mouse::Left)){
                     if (lb.contains(mPos.x, mPos.y)) {
-//                        saveState = gamePaused;
-//                        gamePaused = true;
-//                        if(gamePaused != saveState){
-//                            boardSave = recoverBoard(board);
-//                            revealAll(board);
-//                        }
-                        createLeader(numCols, numRows, font);
+                        timeSaved += clock.getElapsedTime().asSeconds() + .5f;
+                        if(!gamePaused){
+                            boardSave = recoverBoard(board);
+                            revealAll(board);
+                        }
+                        leaderboardBo = true;
+                        clock.restart();
                     }
                     if (face.contains(mPos.x, mPos.y)) {
                         createBoard(numCols, numRows, numMines, board);
                         gameOver = false;
                         gameWon = false;
                         gamePaused = false;
+                        timeRunning = 0;
+                        timeSaved = 0;
+                        timesPaused = 0;
+                        clock.restart();
                     }
                     if (play_pause.contains(mPos.x, mPos.y) && !gameOver) {
                         gamePaused = !gamePaused;
                         if(gamePaused){
+                            timesPaused++;
                             boardSave = recoverBoard(board);
                             revealAll(board);
+                            timeSaved += clock.getElapsedTime().asSeconds() + .5f;
                         } else{
                             board = recoverBoard(boardSave);
+                            clock.restart();
                         }
                     }
                     if (db.contains(mPos.x, mPos.y)) {
@@ -494,28 +646,133 @@ int main() {
         gameWindow.clear(sf::Color::White);
         for(int i = 0; i < numCols; i++){
             for(int j = 0; j < numRows; j++){
-                gameWindow.draw(board[i][j].getSprite());
+                gameWindow.draw(board[i][j].sprite1);
+                gameWindow.draw(board[i][j].sprite2);
             }
         }
         gameWindow.draw(debug);
         gameWindow.draw(leaderboard);
         if (!gameOver) {
             gameWindow.draw(happyFace);
+            if (!gamePaused) {
+                gameWindow.draw(pause);
+                timeRunning = clock.getElapsedTime().asSeconds() + timeSaved;
+            } else {
+                clock.restart();
+                gameWindow.draw(play);
+            }
         } else {
+            if (!gamePaused) {
+                gameWindow.draw(pause);
+            } else {
+                gameWindow.draw(play);
+            }
             if (gameWon) {
                 flagAllMines(board);
                 gameWindow.draw(winFace);
+                boardSave = recoverBoard(board);
+                timesPaused++;
+                //checkIfLeader(timeRunning, username);
+                leaderboardBo = true;
             } else {
-                revealAllMines(board);
+                setMines(board);
                 gameWindow.draw(loseFace);
             }
         }
-        if (!gamePaused) {
-            gameWindow.draw(pause);
-        } else {
-            gameWindow.draw(play);
+        sf::Sprite timerMin1(TextureManager::getTexture("digits"), sf::IntRect(timeRunning/60/10*21, 0,21,32));
+        timerMin1.setPosition((numCols) * 32 - 97, 32 * (numRows + 0.5)+16);
+        sf::Sprite timerMin2(TextureManager::getTexture("digits"), sf::IntRect(timeRunning/60%10*21, 0,21,32));
+        timerMin2.setPosition((numCols) * 32 - 76, 32 * (numRows + 0.5)+16);
+
+        sf::Sprite timerSec1(TextureManager::getTexture("digits"), sf::IntRect(timeRunning%60%10*21, 0,21,32));
+        timerSec1.setPosition((numCols) * 32 - 33, 32 * (numRows + 0.5)+16);
+        sf::Sprite timerSec2(TextureManager::getTexture("digits"), sf::IntRect(timeRunning%60/10*21, 0,21,32));
+        timerSec2.setPosition((numCols) * 32 - 54, 32 * (numRows + 0.5)+16);
+
+        if(numMines-numFlags(board) >= 0){
+            sf::Sprite counter1(TextureManager::getTexture("digits"), sf::IntRect((numMines-numFlags(board))/10*21, 0,21,32));
+            counter1.setPosition(33, 32 * (numRows + 0.5)+16);
+            sf::Sprite counter2(TextureManager::getTexture("digits"), sf::IntRect((numMines-numFlags(board))%10*21, 0,21,32));
+            counter2.setPosition(54, 32 * (numRows + 0.5)+16);
+            gameWindow.draw(counter1);
+            gameWindow.draw(counter2);
+        } else{
+            sf::Sprite counter1(TextureManager::getTexture("digits"), sf::IntRect(-1*(numMines-numFlags(board))/10*21, 0,21,32));
+            counter1.setPosition(33, 32 * (numRows + 0.5)+16);
+            sf::Sprite counter2(TextureManager::getTexture("digits"), sf::IntRect(-1*(numMines-numFlags(board))%10*21, 0,21,32));
+            counter2.setPosition(54, 32 * (numRows + 0.5)+16);
+            sf::Sprite counterNeg(TextureManager::getTexture("digits"), sf::IntRect(10*21, 0,21,32));
+            counterNeg.setPosition(12, 32 * (numRows + 0.5)+16);
+            gameWindow.draw(counter1);
+            gameWindow.draw(counter2);
+            gameWindow.draw(counterNeg);
         }
+
+
+        gameWindow.draw(timerMin1);
+        gameWindow.draw(timerMin2);
+        gameWindow.draw(timerSec1);
+        gameWindow.draw(timerSec2);
+
         gameWindow.display();
+        if(leaderboardBo){
+            sf::RenderWindow lbWindow(sf::VideoMode(numCols*16, numRows*16+100), "Minesweeper", sf::Style::Close);
+
+            sf::Text leaderTitle;
+            leaderTitle.setFont(font);
+            leaderTitle.setString("LEADERBOARD");
+            leaderTitle.setCharacterSize(20); // in pixels, not points!
+            leaderTitle.setFillColor(sf::Color::White);
+            leaderTitle.setStyle(sf::Text::Bold | sf::Text::Underlined);
+            setText(leaderTitle, numCols*8, (numRows*16+100)/2-120);
+
+            string leaderText = "";
+            int count = 1;
+            ifstream file("leaderboard.txt");
+            if(file.is_open()){
+                string entry;
+                while(!file.eof()){
+                    stringstream ss;
+                    ss << count;
+                    leaderText += ss.str() + ".\t";
+
+                    getline(file, entry);
+                    leaderText += entry.substr(0, entry.find(",")) + "\t";
+
+                    entry = entry.substr(entry.find(",")+1);
+                    leaderText += entry.substr(0, entry.find(",")) + "\n\n";
+                    count++;
+                }
+                file.close();
+            }
+
+            sf::Text leaders;
+            leaders.setFont(font);
+            leaders.setString(leaderText);
+            leaders.setCharacterSize(18); // in pixels, not points!
+            leaders.setFillColor(sf::Color::White);
+            leaders.setStyle(sf::Text::Bold);
+            setText(leaders, numCols*8, (numRows*16+100)/2+20);
+
+            while(lbWindow.isOpen()){
+                sf::Event lbEvent;
+                while (lbWindow.pollEvent(lbEvent)){
+                    if (lbEvent.type == sf::Event::Closed){
+                        lbWindow.close();
+                        leaderboardBo = false;
+                        if(timesPaused == 0) {
+                            board = recoverBoard(boardSave);
+                        }
+                    }
+
+                }
+                lbWindow.clear(sf::Color::Blue);
+                lbWindow.draw(leaderTitle);
+                lbWindow.draw(leaders);
+                lbWindow.display();
+            }
+            clock.restart();
+        }
 
     }
     return 0;

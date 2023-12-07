@@ -19,7 +19,8 @@ public:
     bool revealed;
     bool flagged;
     sf::Texture texture;
-    sf::Sprite sprite;
+    sf::Sprite sprite1;
+    sf::Sprite sprite2;
 
 
 
@@ -28,7 +29,7 @@ public:
         minesNext = 0;
         revealed = false;
         flagged = false;
-        sprite.setTexture(TextureManager::getTexture("tile_hidden"));
+        sprite1.setTexture(TextureManager::getTexture("tile_hidden"));
     }
 
     void setMine(bool a){
@@ -40,15 +41,16 @@ public:
     }
 
     void position(float x, float y){
-        sprite.setPosition(x, y);
+        sprite1.setPosition(x, y);
+        sprite2.setPosition(x, y);
     }
 
     void flag(bool a){
         flagged = a;
         if(flagged){
-            sprite.setTexture(TextureManager::getTexture("flag"));
+            sprite2.setTexture(TextureManager::getTexture("flag"));
         } else{
-            sprite.setTexture(TextureManager::getTexture("tile_hidden"));
+            sprite2.setTexture(TextureManager::getTexture("tile_hidden"));
         }
     }
 
@@ -56,21 +58,51 @@ public:
         revealed = a;
         if(revealed){
             if(mine){
-                sprite.setTexture(TextureManager::getTexture("mine"));
+                sprite1.setTexture(TextureManager::getTexture("tile_revealed"));
+                sprite2.setTexture(TextureManager::getTexture("mine"));
                 return true;
             } else{
-                sprite.setTexture(TextureManager::getTexture("tile_revealed"));
+                sprite1.setTexture(TextureManager::getTexture("tile_revealed"));
+                if(minesNext == 1){
+                    sprite2.setTexture(TextureManager::getTexture("number_1"));
+                }
+                if(minesNext == 2){
+                    sprite2.setTexture(TextureManager::getTexture("number_2"));
+                }
+                if(minesNext == 3){
+                    sprite2.setTexture(TextureManager::getTexture("number_3"));
+                }
+                if(minesNext == 4){
+                    sprite2.setTexture(TextureManager::getTexture("number_4"));
+                }
+                if(minesNext == 5){
+                    sprite2.setTexture(TextureManager::getTexture("number_5"));
+                }
+                if(minesNext == 6){
+                    sprite2.setTexture(TextureManager::getTexture("number_6"));
+                }
+                if(minesNext == 7){
+                    sprite2.setTexture(TextureManager::getTexture("number_7"));
+                }
+                if(minesNext == 8){
+                    sprite2.setTexture(TextureManager::getTexture("number_8"));
+                }
                 return false;
             }
         } else{
-            sprite.setTexture(TextureManager::getTexture("tile_hidden"));
+            sprite1.setTexture(TextureManager::getTexture("tile_hidden"));
+            sprite2.setTexture(TextureManager::getTexture("tile_hidden"));
             return false;
         }
 
     }
 
-    sf::Sprite getSprite(){
-        return sprite;
+    sf::Sprite getSprite1(){
+        return sprite1;
+    }
+
+    sf::Sprite getSprite2(){
+        return sprite2;
     }
 
 
